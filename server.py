@@ -36,49 +36,52 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.handleRequest()
     
     def handleRequest(self):
-        self.path = self.data[1]
-        if (self.data[0] == "GET"): # GET method only. serve only basehtml, basecss, deephtml, deepcss 
-            if (self.data[1][0] == "/"): # url check
+        try: # catch errors | directory travesal attack
+            self.path = self.data[1]
+            if (self.data[0] == "GET"): # GET method only. serve only basehtml, basecss, deephtml, deepcss 
+                if (self.data[1][0] == "/"): # url check
 
-                self.path = (os.getcwd()+"\www"+self.data[1]).replace('/','\\') # change front slash to backlash for navigating dir
-                print(self.path)
-                
-                if (os.path.exists(self.path)): # validate path
+                    self.path = (os.getcwd()+"/www"+self.data[1]) #.replace('/','\\') # change front slash to backlash for navigating dir
+                    print(self.path)
+                    
+                    if (os.path.exists(self.path)): # validate path
 
-                    print("path/file exists: "+self.path+"\n")
+                        print("path/file exists: "+self.path+"\n")
 
-                    if (self.path[len(self.path)-1] != "\\"): # missing black slash either 301 | file 
-                        
-                        if (os.path.isfile(self.path)): # .html | .css
-                            print("200 file: "+self.path+"\n")
-                            self.code200()
+                        if (self.path[len(self.path)-1] != "/"): # missing black slash either 301 | file 
                             
-                        else: # 301 redirect
-                            print("301: "+self.path+"\n")
-                            self.code301()
+                            if (os.path.isfile(self.path)): # .html | .css
+                                print("200 file: "+self.path+"\n")
+                                self.code200()
+                                
+                            else: # 301 redirect
+                                print("301: "+self.path+"\n")
+                                self.code301()
 
-                    else: # url OK
-                            self.path += "index.html"
-                            print("200 dir: "+self.path)
-                            self.code200()
+                        else: # url OK
+                                self.path += "index.html"
+                                print("200 dir: "+self.path)
+                                self.code200()
 
-                else: # path/file does not exist
-                    print("404 file/path: "+self.path+"\n")
+                    else: # path/file does not exist
+                        print("404 file/path: "+self.path+"\n")
+                        self.code404()
+
+                else: # malformed url 
+                    print("404 url: "+self.path)
                     self.code404()
 
-            else: # malformed url 
-                print("404 url: "+self.path)
-                self.code404()
-
-        else: # PUT, POST, PULL methods
-            print("405: "+self.path)
-            self.code405()
-
+            else: # PUT, POST, PULL methods
+                print("405: "+self.path)
+                self.code405()
+        except Exception:
+            self.code404()
+            
     # format http response 
     def code200(self): 
         code = "200 OK"
         body = open(self.path).read()
-        mimeType = self.path.split("\\")[-1].split(".")[1] # get the file ext from the path for mimeType
+        mimeType = self.path.split("/")[-1].split(".")[1] # get the file ext from the path for mimeType
         self.response = "HTTP/1.1 {}\r\nContent-Type: text/{}; charset=utf-8\r\n\r\n{}".format(code,mimeType,body)
         self.request.sendall(bytearray(self.response, 'utf-8'))
         
