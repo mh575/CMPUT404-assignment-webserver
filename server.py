@@ -1,5 +1,5 @@
 #  coding: utf-8 
-import socketserver
+import socketserver, os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -30,10 +30,67 @@ import socketserver
 class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
-        self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        self.data = self.request.recv(1024).strip().decode('utf-8').split('\n')[0].split()[:2] # get method, url 
+        print ("Got a request of:\n%s\n" % self.data)
+        self.request.sendall(bytearray("OK\n",'utf-8'))
+        self.handleRequest()
+    
+    def handleRequest(self):
+        self.path = self.data[1]
+        if (self.data[0] == "GET"): # GET method only. serve only basehtml, basecss, deephtml, deepcss 
+            if (self.data[1][0] == "/"): # url check
 
+                self.path = (os.getcwd()+"\www"+self.data[1]).replace('/','\\') # change front slash to backlash for navigating dir
+                print(self.path)
+                
+                if (os.path.exists(self.path)): # validate path
+
+                    print("path/file exists: "+self.path+"\n")
+
+                    if (self.path[len(self.path)-1] != "\\"): # 
+                        
+                        if (os.path.isfile(self.path)): # .html | .css
+                            print("200 file: "+self.path+"\n")
+                            self.code200()
+                            
+                        else: # 301 redirect
+                            print("301: "+self.path+"\n")
+                            self.code301()
+
+                    else: # url OK
+                            self.path += "index.html"
+                            print("200 dir: "+self.path)
+                            self.code200()
+
+                else: # path/file does not exist
+                    print("404 file/path: "+self.path+"\n")
+                    self.code404()
+
+            else: # malformed url 
+                print("404 url: "+self.path)
+                self.code404()
+
+        else: # PUT, POST, PULL methods
+            print("405: "+self.path)
+            self.code405()
+
+    # format http response 
+    def code200(self): # format 301 request and redirect as a 200 request
+        ...
+    
+    def code301(self):
+        ...
+
+    def code404(self):
+        ...
+
+    def code405(self):
+        ...
+    
+    # send http response
+    def handleResponse():
+        ...
+        
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
 
