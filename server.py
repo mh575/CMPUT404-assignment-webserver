@@ -32,7 +32,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).strip().decode('utf-8').split('\n')[0].split()[:2] # get method, url 
         print ("Got a request of:\n%s\n" % self.data)
-        self.request.sendall(bytearray("OK\n",'utf-8'))
+        # self.request.sendall(bytearray("OK\n",'utf-8')) 
         self.handleRequest()
     
     def handleRequest(self):
@@ -47,7 +47,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
                     print("path/file exists: "+self.path+"\n")
 
-                    if (self.path[len(self.path)-1] != "\\"): # 
+                    if (self.path[len(self.path)-1] != "\\"): # missing black slash either 301 | file 
                         
                         if (os.path.isfile(self.path)): # .html | .css
                             print("200 file: "+self.path+"\n")
@@ -75,21 +75,30 @@ class MyWebServer(socketserver.BaseRequestHandler):
             self.code405()
 
     # format http response 
-    def code200(self): # format 301 request and redirect as a 200 request
-        ...
-    
-    def code301(self):
-        ...
+    def code200(self): 
+        code = "200 OK"
+        body = open(self.path).read()
+        mimeType = self.path.split("\\")[-1].split(".")[1] # get the file ext from the path for mimeType
+        self.response = "HTTP/1.1 {}\r\nContent-Type: text/{}; charset=utf-8\r\n\r\n{}".format(code,mimeType,body)
+        self.request.sendall(bytearray(self.response, 'utf-8'))
+        
+    def code301(self): 
+        code = "301 Moved Permanently"
+        self.path += "index.html"
+        location = "http://127.0.0.1:8080"+self.data[1]+"/" # update url from self.data
+        self.response = "HTTP/1.1 {}\r\nLocation: {}\r\nContent-Type: text/plain; charset=utf-8\r\n".format(code,location)
+        self.request.sendall(bytearray(self.response, 'utf-8'))
 
     def code404(self):
-        ...
+        code = "404 Not Found"
+        self.response = "HTTP/1.1 {}\r\nContent-Type: text/plain; charset=utf-8\r\n".format(code)
+        self.request.sendall(bytearray(self.response, 'utf-8'))
 
     def code405(self):
-        ...
-    
-    # send http response
-    def handleResponse():
-        ...
+        code = "405 Method Not Allowed"
+        self.response = "HTTP/1.1 {}\r\nContent-Type: text/plain; charset=utf-8\r\n".format(code)
+        self.request.sendall(bytearray(self.response, 'utf-8'))
+          
         
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
