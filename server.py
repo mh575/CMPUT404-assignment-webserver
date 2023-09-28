@@ -1,7 +1,7 @@
 #  coding: utf-8 
 import socketserver, os
 
-# Copyright 2013 Abram Hindle, Eddie Antonio Santos
+# Copyright 2013 Abram Hindle, Eddie Antonio Santos, Mohammed Hussain
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,11 +28,21 @@ import socketserver, os
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
+    '''
+    citations
+    url: https://dev.to/leandronsp/web-basics-sending-html-css-and-javascript-content-through-http-3g1m
+    author: Leandro Proença
+    date-accessed: 23/09/27
+    license: AGPL-3
+    url: https://www.geeksforgeeks.org/python-check-if-a-file-or-directory-exists/
+    author: nikhilaggarwal3
+    date-accessed: 23/09/27
+    license: CCBY-SA 
+    '''
     
     def handle(self):
         self.data = self.request.recv(1024).strip().decode('utf-8').split('\n')[0].split()[:2] # get method, url 
         print ("Got a request of:\n%s\n" % self.data)
-        # self.request.sendall(bytearray("OK\n",'utf-8')) 
         self.handleRequest()
     
     def handleRequest(self):
@@ -41,39 +51,31 @@ class MyWebServer(socketserver.BaseRequestHandler):
             if (self.data[0] == "GET"): # GET method only. serve only basehtml, basecss, deephtml, deepcss 
                 if (self.data[1][0] == "/"): # url check
 
-                    self.path = (os.getcwd()+"/www"+self.data[1]) #.replace('/','\\') # change front slash to backlash for navigating dir
-                    print(self.path)
+                    self.path = (os.getcwd()+"/www"+self.data[1]) # get current dir
                     
                     if (os.path.exists(self.path)): # validate path
-
-                        print("path/file exists: "+self.path+"\n")
 
                         if (self.path[len(self.path)-1] != "/"): # missing black slash either 301 | file 
                             
                             if (os.path.isfile(self.path)): # .html | .css
-                                print("200 file: "+self.path+"\n")
                                 self.code200()
                                 
                             else: # 301 redirect
-                                print("301: "+self.path+"\n")
                                 self.code301()
 
                         else: # url OK
                                 self.path += "index.html"
-                                print("200 dir: "+self.path)
                                 self.code200()
 
                     else: # path/file does not exist
-                        print("404 file/path: "+self.path+"\n")
                         self.code404()
 
                 else: # malformed url 
-                    print("404 url: "+self.path)
                     self.code404()
 
             else: # PUT, POST, PULL methods
-                print("405: "+self.path)
                 self.code405()
+
         except Exception:
             self.code404()
             
